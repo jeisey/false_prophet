@@ -1,0 +1,31 @@
+{
+  "name": "false-prophet-breakdown",
+  "private": true,
+  "version": "1.0.0",
+  "description": "FALSE PROPHET: BREAKDOWN — a mobile-first heavy-metal action-survival game with a synchronized five-stem soundtrack.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "audio:generate": "python3 scripts/generate-placeholder-audio.py",
+    "audio:verify": "node scripts/verify-audio.mjs"
+  },
+  "dependencies": {
+    "@fontsource/metal-mania": "5.3.0",
+    "@fontsource/oswald": "5.3.0",
+    "@fontsource/permanent-marker": "5.3.0",
+    "phaser": "3.90.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@types/node": "^22.20.4",
+    "typescript": "5.9.3",
+    "vite": "6.4.3",
+    "vitest": "3.2.7"
+  }
+}
