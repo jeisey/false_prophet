@@ -119,6 +119,13 @@ export class HudScene extends Phaser.Scene {
     this.joyX = this.joyY = 0;
     this.joyHintT = 7;
     this.stormLevel = 0;
+    // The scene instance is reused across runs: clear anything still on a timer.
+    this.stormFlash = 0;
+    this.nextStormFlash = 4;
+    this.soloShake = 0;
+    this.sayT = this.toastT = this.transT = this.regionT = 0;
+    this.transFull = '';
+    this.lastSecond = -1;
     setupScreenCamera(this);
     this.buildTextures();
     this.build();

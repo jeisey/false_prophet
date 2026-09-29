@@ -8,6 +8,8 @@ export const RUN_SECONDS = 18 * 60;
 /** Logical design resolution (portrait). Height stretches on tall phones. */
 export const LOGICAL_WIDTH = 540;
 export const LOGICAL_MIN_HEIGHT = 960;
+/** Shortest logical height used on portrait screens (browser chrome eats height). */
+export const LOGICAL_PORTRAIT_MIN_HEIGHT = 800;
 export const LOGICAL_MAX_HEIGHT = 1200;
 /** Max render scale (caps device-pixel-ratio cost on high-DPI phones). */
 export const MAX_RENDER_SCALE = 2;

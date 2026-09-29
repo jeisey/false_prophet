@@ -36,6 +36,8 @@ export interface EngineDeps {
   /** Wall clock in seconds (used by the silent fallback clock). */
   wallClock: () => number;
   baseUrl: string;
+  /** Test-only: skip the compressor/limiter/low-pass so output is linear and analyzable. */
+  bypassDynamics?: boolean;
 }
 
 const defaultDeps = (): EngineDeps => ({
@@ -200,12 +202,18 @@ export class AudioEngine {
     this.masterGain = ctx.createGain();
     this.masterGain.gain.value = this.muted ? 0 : AUDIO_MIX.masterGain;
 
-    const limiter = ctx.createDynamicsCompressor();
-    setComp(limiter, AUDIO_MIX.limiter);
-    const comp = ctx.createDynamicsCompressor();
-    setComp(comp, AUDIO_MIX.compressor);
-    comp.connect(limiter);
-    limiter.connect(this.masterGain);
+    let comp: AudioNode;
+    if (this.deps.bypassDynamics) {
+      comp = this.masterGain;
+    } else {
+      const limiter = ctx.createDynamicsCompressor();
+      setComp(limiter, AUDIO_MIX.limiter);
+      const c = ctx.createDynamicsCompressor();
+      setComp(c, AUDIO_MIX.compressor);
+      c.connect(limiter);
+      limiter.connect(this.masterGain);
+      comp = c;
+    }
     this.masterGain.connect(ctx.destination);
 
     this.analyser = ctx.createAnalyser();
@@ -221,8 +229,11 @@ export class AudioEngine {
     this.musicBus.gain.value = this.musicVolume;
 
     this.musicBus.connect(this.surgeGain);
-    this.surgeGain.connect(this.pauseFilter);
-    this.pauseFilter.connect(this.fadeGain);
+    if (this.deps.bypassDynamics) this.surgeGain.connect(this.fadeGain);
+    else {
+      this.surgeGain.connect(this.pauseFilter);
+      this.pauseFilter.connect(this.fadeGain);
+    }
     this.fadeGain.connect(comp);
     this.fadeGain.connect(this.analyser);
 

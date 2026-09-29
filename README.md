@@ -42,7 +42,9 @@ no backend, no accounts, no API keys.
 npm test               # unit tests (Vitest): clock, roster, BREAKDOWN, upgrades,
                        # persistence, transport math, stem scheduling, WAV files
 npm run typecheck      # TypeScript
-npm run test:e2e       # browser tests (Playwright, phone viewport); starts a dev server
+npm run test:e2e       # browser tests (Playwright, phone viewport); starts a dev server.
+                       # Includes an offline render of the real stem engine that checks
+                       # rescued stems enter on the bar line, in phase, click-free.
 npm run audio:verify   # checks the five stems match the audio contract
 npm run audio:generate # regenerates the placeholder stems (python3, stdlib only)
 ```
@@ -151,8 +153,17 @@ Oswald — all OFL) are bundled via `@fontsource`.
 
 Stored in `localStorage` only: music/SFX volume, mute, reduced screen shake,
 reduced flashing, haptics, damage numbers, best escape time, victories per
-starting member, and whether the intro has been watched. Runs themselves are not
-saved — a run is one focused 18-minute session.
+starting member, and whether the intro has been watched (the story intro plays
+on your first run; after that START RUN goes straight in unless SETTINGS →
+ALWAYS PLAY INTRO is on). Runs themselves are not saved — a run is one focused
+18-minute session.
+
+## Performance
+
+Rendering runs at up to 2 device pixels per logical unit. If a device keeps
+dropping below ~45 fps, the game lowers its render resolution a step at a time
+(never below 1×) and thins out particles; gameplay logic is unaffected.
+Enemies, projectiles, pickups and effects are pooled.
 
 ## Testing hooks
 

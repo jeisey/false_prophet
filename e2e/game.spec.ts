@@ -92,7 +92,7 @@ test('the clock reaching 00:00 ends the run: HARVEST COMPLETE', async ({ page })
   await startViaMenus(page, 'bass');
   await fp(page, 'god', true);
   await fp(page, 'setTime', 1.2);
-  await expect(page.locator('.results .big')).toContainText('HARVEST', { timeout: 15_000 });
+  await expect(page.locator('.results > .big')).toContainText('HARVEST', { timeout: 15_000 });
   const st = await fp<any>(page, 'state');
   expect(st.phase).toBe('defeat');
   expect(st.clock).toBe('00:00');
@@ -119,8 +119,17 @@ test('boss defeat + reaching the portal wins the run', async ({ page }) => {
   await expect.poll(async () => (await fp<any>(page, 'state')).spire, { timeout: 20_000 }).toBe('escape');
   const portal = await page.evaluate(() => (window as any).__FP__.portalPos());
   await fp(page, 'teleport', portal.x, portal.y + 20);
-  await expect(page.locator('.results .big')).toContainText('REUNITED', { timeout: 20_000 });
+  await expect(page.locator('.results > .big')).toContainText('REUNITED', { timeout: 20_000 });
   expect((await fp<any>(page, 'state')).phase).toBe('victory');
+
+  // PLAY AGAIN starts a fresh run with the same starter and a full clock
+  await page.locator('[data-act=again]').click();
+  await expect.poll(async () => (await fp<any>(page, 'state')).started, { timeout: 30_000 }).toBe(true);
+  const st = await fp<any>(page, 'state');
+  expect(st.phase).toBe('playing');
+  expect(st.band).toEqual(['rhythm']);
+  expect(st.timeRemaining).toBeGreaterThan(17 * 60);
+  expect(st.spire).not.toBe('escape');
 });
 
 test('settings and best score survive a refresh', async ({ page }) => {

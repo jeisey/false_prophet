@@ -98,6 +98,11 @@ export class GameScene extends Phaser.Scene {
     this.gameTime = 0;
     this.slowT = this.hitStopT = this.invulnT = 0;
     this.zoom = this.zoomTarget = 1;
+    this.zoomHold = 0;
+    this.combatT = 0;
+    this.lastSoloHint = -1;
+    this.damageLog = [];
+    this.autopilot = null;
     this.pendingStemPulses = [];
     this.region = '';
 
@@ -480,6 +485,9 @@ export class GameScene extends Phaser.Scene {
   // ------------------------------------------------------------------ frame
 
   perfMs = 0;
+  private fpsWindow = 0;
+  private fpsFrames = 0;
+  private slowWindows = 0;
   /** Worst-case ms per subsystem since the last read (debug only). */
   prof: Record<string, number> = {};
   private profT = 0;
@@ -595,6 +603,7 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    this.watchFrameRate(delta / 1000);
     this.updateCamera(realDt);
     this.mark('camera');
     this.updateWorldBits();
@@ -602,6 +611,20 @@ export class GameScene extends Phaser.Scene {
     this.hud()?.sync(this);
     this.mark('hud');
     this.perfMs += (performance.now() - perf0 - this.perfMs) * 0.05;
+  }
+
+  /** If the device keeps missing ~45 fps, step the render resolution down. */
+  private watchFrameRate(rawDt: number): void {
+    this.fpsWindow += rawDt;
+    this.fpsFrames++;
+    if (this.fpsWindow < 4) return;
+    const fps = this.fpsFrames / this.fpsWindow;
+    this.fpsWindow = 0;
+    this.fpsFrames = 0;
+    if (fps < 45 && !App.autopilot) {
+      this.slowWindows++;
+      if (this.slowWindows >= 2 && layout.lowerResolution()) this.slowWindows = 0;
+    } else this.slowWindows = 0;
   }
 
   private stemPulse(member: MemberId): void {

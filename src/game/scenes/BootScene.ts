@@ -31,7 +31,9 @@ export class BootScene extends Phaser.Scene {
     if (!this.textures.exists('grain')) this.textures.addCanvas('grain', paintGrainTile(256));
     this.buildDamageFont();
 
-    document.getElementById('boot-splash')?.classList.add('gone');
+    const splash = document.getElementById('boot-splash');
+    splash?.classList.add('gone');
+    setTimeout(() => splash?.remove(), 600);
     this.scene.start('backdrop');
     App.ui.showTitle();
   }

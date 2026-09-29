@@ -7,7 +7,7 @@
  * Rendering happens at `rs` device pixels per logical unit (capped at 2) so
  * text and vector art stay crisp without paying for 3x DPR.
  */
-import { LOGICAL_MAX_HEIGHT, LOGICAL_MIN_HEIGHT, LOGICAL_WIDTH, MAX_RENDER_SCALE } from '../config/gameConfig';
+import { LOGICAL_MAX_HEIGHT, LOGICAL_MIN_HEIGHT, LOGICAL_PORTRAIT_MIN_HEIGHT, LOGICAL_WIDTH, MAX_RENDER_SCALE } from '../config/gameConfig';
 
 export interface Insets {
   top: number;
@@ -36,10 +36,12 @@ export interface LayoutState {
   wide: boolean;
 }
 
-export function computeLayout(viewW: number, viewH: number, dpr: number, safeCss: Insets, touch: boolean): LayoutState {
+export function computeLayout(viewW: number, viewH: number, dpr: number, safeCss: Insets, touch: boolean, maxScale = MAX_RENDER_SCALE): LayoutState {
   const W = LOGICAL_WIDTH;
   const aspect = viewH / Math.max(1, viewW);
-  const minA = LOGICAL_MIN_HEIGHT / W;
+  // Any portrait-ish screen fills its width (short phones get a shorter logical
+  // height); landscape/tablet screens get a centered 9:16 frame.
+  const minA = LOGICAL_PORTRAIT_MIN_HEIGHT / W;
   const maxA = LOGICAL_MAX_HEIGHT / W;
   let H: number;
   let cssW: number;
@@ -57,7 +59,7 @@ export function computeLayout(viewW: number, viewH: number, dpr: number, safeCss
   const cssLeft = Math.max(0, (viewW - cssW) / 2);
   const cssTop = Math.max(0, (viewH - cssH) / 2);
   const unit = cssW / W;
-  const rs = Math.max(0.75, Math.min(MAX_RENDER_SCALE, Math.round(dpr * unit * 4) / 4));
+  const rs = Math.max(0.75, Math.min(maxScale, Math.round(dpr * unit * 4) / 4));
   const toLogical = (v: number) => Math.max(0, v) / unit;
   const safe: Insets = {
     top: toLogical(safeCss.top - cssTop),
@@ -73,6 +75,16 @@ type Listener = (l: LayoutState) => void;
 class LayoutManager {
   state: LayoutState = computeLayout(540, 960, 1, { top: 0, right: 0, bottom: 0, left: 0 }, false);
   private listeners = new Set<Listener>();
+  /** Lowered at runtime if the device can't hold a good frame rate. */
+  renderCap = MAX_RENDER_SCALE;
+
+  /** Drop render resolution one step (keeps gameplay smooth on weak GPUs). */
+  lowerResolution(): boolean {
+    if (this.state.rs <= 1) return false;
+    this.renderCap = Math.max(1, Math.min(this.renderCap, this.state.rs) - 0.5);
+    this.refresh();
+    return true;
+  }
 
   measure(): LayoutState {
     const vv = window.visualViewport;
@@ -80,7 +92,7 @@ class LayoutManager {
     const viewH = Math.round(vv?.height ?? window.innerHeight);
     const dpr = window.devicePixelRatio || 1;
     const touch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
-    this.state = computeLayout(viewW, viewH, dpr, readSafeArea(), touch);
+    this.state = computeLayout(viewW, viewH, dpr, readSafeArea(), touch, this.renderCap);
     return this.state;
   }
 
